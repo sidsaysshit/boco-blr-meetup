@@ -4,12 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Bangalore Meet-Up Map</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
     header {
       background: linear-gradient(135deg, #1a1a2e, #16213e);
       color: white; padding: 12px 20px;
@@ -21,7 +18,6 @@
     header h1 { font-size: 1.1rem; letter-spacing: 0.5px; }
     header h1 span { color: #f97316; }
     header .tagline { font-size: 0.75rem; color: #94a3b8; }
-
     .controls {
       background: #fff;
       padding: 10px 16px;
@@ -31,7 +27,6 @@
       position: relative;
       z-index: 1000;
     }
-
     .search-wrapper {
       position: relative;
       flex: 1.5;
@@ -50,21 +45,19 @@
       position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
       color: #94a3b8; font-size: 0.85rem; pointer-events: none;
     }
-    .suggestions {
-      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-      background: white; border: 1px solid #e2e8f0; border-radius: 8px;
-      max-height: 200px; overflow-y: auto;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-      z-index: 9999;
+    /* PAC (Google autocomplete dropdown) styling */
+    .pac-container {
+      border-radius: 8px !important;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+      border: 1px solid #e2e8f0 !important;
+      font-family: 'Segoe UI', sans-serif !important;
+      font-size: 0.82rem !important;
+      z-index: 9999 !important;
+      margin-top: 4px !important;
     }
-    .suggestion-item {
-      padding: 9px 12px; font-size: 0.82rem; cursor: pointer;
-      color: #374151; border-bottom: 1px solid #f1f5f9;
-      transition: background 0.15s;
-    }
-    .suggestion-item:hover { background: #eff6ff; }
-    .suggestion-item:last-child { border-bottom: none; }
-
+    .pac-item { padding: 8px 12px !important; cursor: pointer !important; }
+    .pac-item:hover { background: #eff6ff !important; }
+    .pac-item-query { font-size: 0.82rem !important; }
     .name-wrapper { flex: 1; min-width: 150px; }
     .name-wrapper input {
       width: 100%;
@@ -75,7 +68,6 @@
       outline: none;
     }
     .name-wrapper input:focus { border-color: #f97316; }
-
     button {
       padding: 8px 13px; border: none; border-radius: 8px;
       cursor: pointer; font-size: 0.82rem; font-weight: 600;
@@ -87,10 +79,8 @@
     .btn-meet  { background: #10b981; color: white; }
     .btn-share { background: #3b82f6; color: white; }
     .btn-clear { background: #ef4444; color: white; }
-
     .layout { display: flex; flex: 1; overflow: hidden; }
     #map { flex: 1; z-index: 1; }
-
     .sidebar {
       width: 270px;
       background: #fff;
@@ -128,7 +118,6 @@
       color: #9ca3af; font-size: 0.82rem;
     }
     .empty-state div { font-size: 1.8rem; margin-bottom: 8px; }
-
     .meet-box {
       padding: 12px 14px;
       background: #ecfdf5; border-top: 2px solid #10b981;
@@ -136,7 +125,6 @@
     }
     .meet-box strong { display: block; margin-bottom: 4px; font-size: 0.82rem; }
     .meet-box .meet-coords { color: #047857; font-size: 0.74rem; }
-
     .toast {
       position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
       background: #1f2937; color: white;
@@ -146,7 +134,6 @@
       transition: opacity 0.3s ease;
     }
     .toast.show { opacity: 1; }
-
     .mode-banner {
       position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
       background: #1e40af; color: white;
@@ -155,7 +142,6 @@
       pointer-events: none;
       display: none;
     }
-
     @media (max-width: 680px) {
       .sidebar { display: none; }
       .controls { gap: 6px; }
@@ -163,33 +149,27 @@
   </style>
 </head>
 <body>
-
 <header>
   <div>
     <h1>📍 Bangalore <span>Meet-Up Map</span></h1>
     <div class="tagline">Drop pins, find your common meeting point</div>
   </div>
 </header>
-
 <div class="controls">
-  <!-- Search Box -->
+  <!-- Search Box (Google Places Autocomplete will attach here) -->
   <div class="search-wrapper" id="searchWrapper">
     <span class="search-icon">🔍</span>
     <input type="text" id="searchInput" placeholder="Search location (e.g. Koramangala, Indiranagar…)" autocomplete="off"/>
-    <div class="suggestions" id="suggestions" style="display:none;"></div>
   </div>
-
   <!-- Name Input -->
   <div class="name-wrapper">
     <input type="text" id="nameInput" placeholder="Your name" autocomplete="off"/>
   </div>
-
   <button class="btn-add" onclick="enableDropMode()">📌 Drop Pin</button>
   <button class="btn-meet" onclick="findMeetingPoint()">🎯 Meeting Point</button>
   <button class="btn-share" onclick="shareLink()">🔗 Share Link</button>
   <button class="btn-clear" onclick="clearAll()">🗑️ Clear All</button>
 </div>
-
 <div class="layout">
   <div id="map"></div>
   <div class="sidebar">
@@ -204,50 +184,131 @@
     </div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 <div class="mode-banner" id="modeBanner">📌 Click anywhere on the map to drop your pin</div>
 
+<!-- ─── Google Maps JS API (replace YOUR_API_KEY) ─────────────────────────── -->
 <script>
-// ─── MAP SETUP ────────────────────────────────────────────────────────────────
-const map = L.map('map', { zoomControl: true }).setView([12.9716, 77.5946], 12);
+// ─── REPLACE THIS WITH YOUR ACTUAL GOOGLE MAPS API KEY ───────────────────────
+const GOOGLE_MAPS_API_KEY = 'AIzaSyD4QGsmGCFBdVTCtdlanM38SQZeEl1VzjA';
+// ─────────────────────────────────────────────────────────────────────────────
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  maxZoom: 19
-}).addTo(map);
+// Dynamically load the Google Maps JS API with Places library
+(function loadGoogleMaps() {
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,marker&callback=initMap`;
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
+})();
+</script>
 
+<script>
 // ─── STATE ────────────────────────────────────────────────────────────────────
-let pins = [];           // { name, lat, lng, label, marker }
+let map;
+let geocoder;
+let autocomplete;
+let pins = [];         // { name, lat, lng, label, marker, color, infoWindow }
 let meetMarker = null;
+let meetInfoWindow = null;
 let dropMode = false;
 let selectedLat = null;
 let selectedLng = null;
-let searchTimeout = null;
-
-// ─── ICONS ───────────────────────────────────────────────────────────────────
-function makeIcon(color = '#f97316') {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 42" width="32" height="42">
-    <path d="M16 0 C7.16 0 0 7.16 0 16 C0 26 16 42 16 42 C16 42 32 26 32 16 C32 7.16 24.84 0 16 0Z"
-      fill="${color}" stroke="white" stroke-width="2"/>
-    <circle cx="16" cy="16" r="6" fill="white"/>
-  </svg>`;
-  return L.divIcon({
-    html: svg,
-    iconSize: [32, 42],
-    iconAnchor: [16, 42],
-    popupAnchor: [0, -44],
-    className: ''
-  });
-}
-
-const meetIcon = makeIcon('#10b981');
 
 // ─── COLORS ──────────────────────────────────────────────────────────────────
 const COLORS = ['#f97316','#3b82f6','#8b5cf6','#ec4899','#ef4444','#eab308','#06b6d4','#84cc16'];
 let colorIdx = 0;
 
-// ─── URL STATE ───────────────────────────────────────────────────────────────
+// ─── MAP INIT (called by Google Maps callback) ───────────────────────────────
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 12.9716, lng: 77.5946 },
+    zoom: 12,
+    mapTypeControl: false,
+    fullscreenControl: false,
+    streetViewControl: false,
+    zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM }
+  });
+
+  geocoder = new google.maps.Geocoder();
+
+  // ── Places Autocomplete ────────────────────────────────────────────────────
+  autocomplete = new google.maps.places.Autocomplete(
+    document.getElementById('searchInput'),
+    {
+      componentRestrictions: { country: 'in' },
+      bounds: new google.maps.LatLngBounds(
+        { lat: 12.834, lng: 77.460 },   // SW Bangalore
+        { lat: 13.140, lng: 77.780 }    // NE Bangalore
+      ),
+      strictBounds: false,
+      fields: ['geometry', 'name', 'formatted_address']
+    }
+  );
+
+  autocomplete.addListener('place_changed', () => {
+    const place = autocomplete.getPlace();
+    if (!place.geometry || !place.geometry.location) {
+      showToast('⚠️ Could not find that location. Try a different search.');
+      return;
+    }
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+    const label = place.formatted_address || place.name || '';
+    selectedLat = lat;
+    selectedLng = lng;
+    document.getElementById('searchInput').value = place.name || label.split(',')[0].trim();
+    map.panTo({ lat, lng });
+    map.setZoom(15);
+    showToast('📍 Location selected! Enter your name and click Drop Pin.');
+  });
+
+  // ── Map click for drop mode ────────────────────────────────────────────────
+  map.addListener('click', (e) => {
+    if (!dropMode) return;
+    const name = document.getElementById('nameInput').value.trim();
+    if (!name) { showToast('⚠️ Enter your name first!'); return; }
+    addPin(name, e.latLng.lat(), e.latLng.lng(), '');
+    document.getElementById('nameInput').value = '';
+    document.getElementById('searchInput').value = '';
+    dropMode = false;
+    map.getDiv().style.cursor = '';
+    document.getElementById('modeBanner').style.display = 'none';
+  });
+
+  // Load any pins encoded in the URL
+  loadFromURL();
+}
+
+// ─── SVG PIN ICON ─────────────────────────────────────────────────────────────
+function makeSVGIcon(color = '#f97316') {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 42" width="32" height="42">
+    <path d="M16 0 C7.16 0 0 7.16 0 16 C0 26 16 42 16 42 C16 42 32 26 32 16 C32 7.16 24.84 0 16 0Z"
+      fill="${color}" stroke="white" stroke-width="2"/>
+    <circle cx="16" cy="16" r="6" fill="white"/>
+  </svg>`;
+  return {
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(32, 42),
+    anchor: new google.maps.Point(16, 42),
+    labelOrigin: new google.maps.Point(16, 16)
+  };
+}
+
+function makeMeetIcon() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 42" width="32" height="42">
+    <path d="M16 0 C7.16 0 0 7.16 0 16 C0 26 16 42 16 42 C16 42 32 26 32 16 C32 7.16 24.84 0 16 0Z"
+      fill="#10b981" stroke="white" stroke-width="2"/>
+    <circle cx="16" cy="16" r="6" fill="white"/>
+  </svg>`;
+  return {
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(36, 48),
+    anchor: new google.maps.Point(18, 48),
+  };
+}
+
+// ─── URL STATE ────────────────────────────────────────────────────────────────
 function saveToURL() {
   const data = pins.map(p => ({ n: p.name, la: +p.lat.toFixed(5), ln: +p.lng.toFixed(5), lb: p.label }));
   const encoded = btoa(encodeURIComponent(JSON.stringify(data)));
@@ -264,7 +325,9 @@ function loadFromURL() {
     const data = JSON.parse(decodeURIComponent(atob(raw)));
     data.forEach(p => addPin(p.n, p.la, p.ln, p.lb, false));
     if (data.length > 0) {
-      map.fitBounds(pins.map(p => [p.lat, p.lng]), { padding: [40, 40] });
+      const bounds = new google.maps.LatLngBounds();
+      pins.forEach(p => bounds.extend({ lat: p.lat, lng: p.lng }));
+      map.fitBounds(bounds, { padding: 40 });
     }
   } catch (e) {
     console.error('Failed to load pins from URL', e);
@@ -276,6 +339,7 @@ function enableDropMode() {
   const name = document.getElementById('nameInput').value.trim();
   if (!name) { showToast('⚠️ Please enter your name first!'); return; }
 
+  // If a location was already selected via autocomplete, place pin immediately
   if (selectedLat !== null) {
     addPin(name, selectedLat, selectedLng, document.getElementById('searchInput').value.trim());
     document.getElementById('nameInput').value = '';
@@ -286,71 +350,69 @@ function enableDropMode() {
 
   dropMode = true;
   document.getElementById('modeBanner').style.display = 'block';
-  map.getContainer().style.cursor = 'crosshair';
+  map.getDiv().style.cursor = 'crosshair';
   showToast('📌 Click on the map to place your pin!');
 }
 
-map.on('click', function(e) {
-  if (!dropMode) return;
-  const name = document.getElementById('nameInput').value.trim();
-  if (!name) { showToast('⚠️ Enter your name first!'); return; }
-  addPin(name, e.latlng.lat, e.latlng.lng, '');
-  document.getElementById('nameInput').value = '';
-  document.getElementById('searchInput').value = '';
-  dropMode = false;
-  map.getContainer().style.cursor = '';
-  document.getElementById('modeBanner').style.display = 'none';
-});
-
-// ─── ADD PIN ─────────────────────────────────────────────────────────────────
+// ─── ADD PIN ──────────────────────────────────────────────────────────────────
 function addPin(name, lat, lng, label = '', save = true) {
   const color = COLORS[colorIdx % COLORS.length];
   colorIdx++;
 
-  const marker = L.marker([lat, lng], {
-    icon: makeIcon(color),
+  const marker = new google.maps.Marker({
+    position: { lat, lng },
+    map: map,
+    icon: makeSVGIcon(color),
     draggable: true,
-    title: name
-  }).addTo(map);
+    title: name,
+    zIndex: 10
+  });
 
-  const shortLabel = label.length > 40 ? label.slice(0, 40) + '…' : label;
-  marker.bindPopup(`<b style="color:${color}">${name}</b>${shortLabel ? '<br/><small>' + shortLabel + '</small>' : ''}`);
-  marker.openPopup();
+  const shortLabel = label.length > 60 ? label.slice(0, 60) + '…' : label;
+  const infoWindow = new google.maps.InfoWindow({
+    content: `<div style="font-family:'Segoe UI',sans-serif;font-size:0.85rem;">
+      <b style="color:${color}">${escHtml(name)}</b>
+      ${shortLabel ? '<br/><small style="color:#4b5563">' + escHtml(shortLabel) + '</small>' : ''}
+    </div>`
+  });
+  infoWindow.open(map, marker);
 
-  marker.on('dragend', function() {
-    const ll = marker.getLatLng();
+  marker.addListener('click', () => infoWindow.open(map, marker));
+
+  marker.addListener('dragend', () => {
+    const pos = marker.getPosition();
     const pin = pins.find(p => p.marker === marker);
-    if (pin) { pin.lat = ll.lat; pin.lng = ll.lng; }
+    if (pin) { pin.lat = pos.lat(); pin.lng = pos.lng(); }
     saveToURL();
     renderSidebar();
   });
 
-  const pin = { name, lat, lng, label, marker, color };
+  const pin = { name, lat, lng, label, marker, color, infoWindow };
   pins.push(pin);
-
   if (save) saveToURL();
   renderSidebar();
 }
 
-// ─── REMOVE PIN ──────────────────────────────────────────────────────────────
+// ─── REMOVE PIN ───────────────────────────────────────────────────────────────
 function removePin(idx) {
-  if (pins[idx]) { map.removeLayer(pins[idx].marker); }
+  if (pins[idx]) {
+    pins[idx].marker.setMap(null);
+    pins[idx].infoWindow.close();
+  }
   pins.splice(idx, 1);
   saveToURL();
   renderSidebar();
   hideMeetBox();
 }
 
-// ─── SIDEBAR ─────────────────────────────────────────────────────────────────
+// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 function renderSidebar() {
   const list = document.getElementById('pinList');
   document.getElementById('pinCount').textContent = pins.length;
-
   if (pins.length === 0) {
     list.innerHTML = '<div class="empty-state"><div>🗺️</div>No pins yet.<br/>Search a location or click the map.</div>';
     return;
   }
-
   list.innerHTML = pins.map((p, i) => `
     <div class="pin-card">
       <button class="pin-del" onclick="removePin(${i})">✕</button>
@@ -371,29 +433,48 @@ function findMeetingPoint() {
 
   const lat = pins.reduce((s, p) => s + p.lat, 0) / pins.length;
   const lng = pins.reduce((s, p) => s + p.lng, 0) / pins.length;
+  const latLng = { lat, lng };
 
-  if (meetMarker) map.removeLayer(meetMarker);
-  meetMarker = L.marker([lat, lng], { icon: meetIcon, zIndexOffset: 1000 }).addTo(map);
-  meetMarker.bindPopup('<b style="color:#10b981">🎯 Suggested Meeting Point</b>').openPopup();
-  map.flyTo([lat, lng], 14, { duration: 1.2 });
+  if (meetMarker) meetMarker.setMap(null);
+  if (meetInfoWindow) meetInfoWindow.close();
+
+  meetMarker = new google.maps.Marker({
+    position: latLng,
+    map: map,
+    icon: makeMeetIcon(),
+    zIndex: 100,
+    title: '🎯 Meeting Point'
+  });
+
+  meetInfoWindow = new google.maps.InfoWindow({
+    content: `<div style="font-family:'Segoe UI',sans-serif;font-size:0.85rem;">
+      <b style="color:#10b981">🎯 Suggested Meeting Point</b>
+    </div>`
+  });
+  meetInfoWindow.open(map, meetMarker);
+  meetMarker.addListener('click', () => meetInfoWindow.open(map, meetMarker));
+
+  map.panTo(latLng);
+  map.setZoom(14);
 
   document.getElementById('meetBox').style.display = 'block';
   document.getElementById('meetCoords').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   document.getElementById('meetAddress').textContent = 'Locating address…';
 
-  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
-    .then(r => r.json())
-    .then(d => {
-      document.getElementById('meetAddress').textContent = d.display_name || 'Address not found';
-    })
-    .catch(() => {
+  // Reverse geocode using Google Geocoder
+  geocoder.geocode({ location: latLng }, (results, status) => {
+    if (status === 'OK' && results[0]) {
+      document.getElementById('meetAddress').textContent = results[0].formatted_address;
+    } else {
       document.getElementById('meetAddress').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    });
+    }
+  });
 }
 
 function hideMeetBox() {
   document.getElementById('meetBox').style.display = 'none';
-  if (meetMarker) { map.removeLayer(meetMarker); meetMarker = null; }
+  if (meetMarker) { meetMarker.setMap(null); meetMarker = null; }
+  if (meetInfoWindow) { meetInfoWindow.close(); meetInfoWindow = null; }
 }
 
 // ─── SHARE ────────────────────────────────────────────────────────────────────
@@ -411,7 +492,7 @@ function shareLink() {
 
 // ─── CLEAR ────────────────────────────────────────────────────────────────────
 function clearAll() {
-  pins.forEach(p => map.removeLayer(p.marker));
+  pins.forEach(p => { p.marker.setMap(null); p.infoWindow.close(); });
   pins = []; colorIdx = 0;
   hideMeetBox();
   renderSidebar();
@@ -421,67 +502,12 @@ function clearAll() {
   showToast('🗑️ All pins cleared!');
 }
 
-// ─── SEARCH ───────────────────────────────────────────────────────────────────
-const searchInput = document.getElementById('searchInput');
-const suggestionsBox = document.getElementById('suggestions');
-
-searchInput.addEventListener('input', () => {
-  clearTimeout(searchTimeout);
-  const q = searchInput.value.trim();
-  if (q.length < 3) { suggestionsBox.style.display = 'none'; return; }
-  searchTimeout = setTimeout(() => fetchSuggestions(q), 320);
-});
-
-searchInput.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { suggestionsBox.style.display = 'none'; }
-});
-
-document.addEventListener('click', e => {
-  if (!document.getElementById('searchWrapper').contains(e.target)) {
-    suggestionsBox.style.display = 'none';
-  }
-});
-
-function fetchSuggestions(q) {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q + ' Bangalore India')}&format=json&limit=6&addressdetails=1`;
-  fetch(url, { headers: { 'Accept-Language': 'en' } })
-    .then(r => r.json())
-    .then(data => renderSuggestions(data))
-    .catch(() => {});
-}
-
-function renderSuggestions(data) {
-  if (!data.length) { suggestionsBox.style.display = 'none'; return; }
-  suggestionsBox.innerHTML = data.map(item => `
-    <div class="suggestion-item" onclick="selectSuggestion(${item.lat}, ${item.lon}, '${escAttr(item.display_name)}')">
-      📍 ${item.display_name}
-    </div>
-  `).join('');
-  suggestionsBox.style.display = 'block';
-}
-
-function escAttr(s) {
-  return s.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '');
-}
-
-function selectSuggestion(lat, lng, label) {
-  lat = parseFloat(lat); lng = parseFloat(lng);
-  selectedLat = lat; selectedLng = lng;
-  searchInput.value = label.split(',')[0].trim();
-  suggestionsBox.style.display = 'none';
-  map.flyTo([lat, lng], 15, { duration: 1.0 });
-  showToast('📍 Location selected! Enter your name and click Drop Pin.');
-}
-
-// ─── TOAST ───────────────────────────────────────────────────────────────────
+// ─── TOAST ────────────────────────────────────────────────────────────────────
 function showToast(msg, duration = 2800) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), duration);
 }
-
-// ─── BOOT ────────────────────────────────────────────────────────────────────
-loadFromURL();
 </script>
 </body>
 </html>
